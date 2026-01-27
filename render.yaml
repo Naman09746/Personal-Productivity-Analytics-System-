@@ -4,7 +4,7 @@ services:
     name: ppas-backend
     runtime: python
     plan: free
-    buildCommand: "./backend/build.sh"
+    buildCommand: "bash ./backend/build.sh"
     startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port 10000"
     envVars:
       - key: PYTHON_VERSION
