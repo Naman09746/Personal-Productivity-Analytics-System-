@@ -1,6 +1,7 @@
 """
 Personal Productivity Analytics System - Configuration
 """
+from typing import Any
 from pydantic_settings import BaseSettings
 from functools import lru_cache
 
