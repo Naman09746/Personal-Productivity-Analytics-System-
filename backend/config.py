@@ -5,6 +5,8 @@ from pydantic_settings import BaseSettings
 from functools import lru_cache
 
 
+from pydantic import field_validator
+
 class Settings(BaseSettings):
     # Application
     APP_NAME: str = "Personal Productivity Analytics System"
@@ -35,6 +37,7 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive = True
 
+    @field_validator("DATABASE_URL")
     @classmethod
     def parse_db_url(cls, v: str) -> str:
         if v.startswith("postgres://"):
@@ -42,10 +45,6 @@ class Settings(BaseSettings):
         if v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
             return v.replace("postgresql://", "postgresql+asyncpg://", 1)
         return v
-    
-    def __init__(self, **data):
-        super().__init__(**data)
-        self.DATABASE_URL = self.parse_db_url(self.DATABASE_URL)
 
 
 @lru_cache()
