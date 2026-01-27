@@ -29,7 +29,7 @@ class Settings(BaseSettings):
     LOGIN_RATE_LIMIT_PER_HOUR: int = 10
     
     # CORS
-    CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:3000", "https://ppas-frontend.onrender.com", "*"]
+    CORS_ORIGINS: list[str] | str = ["http://localhost:5173", "http://localhost:3000", "https://ppas-frontend.onrender.com", "*"]
     
     # Timezone (default for new users)
     DEFAULT_TIMEZONE: str = "UTC"
