@@ -15,11 +15,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: CORS_ORIGINS
-        fromService:
-          type: web
-          name: ppas-frontend
-          property: url
-
+        value: https://ppas-frontend.onrender.com
   # Frontend Service
   - type: web
     name: ppas-frontend
@@ -28,13 +24,10 @@ services:
     startCommand: "cd frontend && npm run preview -- --host --port $PORT"
     envVars:
       - key: VITE_API_URL
-        fromService:
-          type: web
-          name: ppas-backend
-          property: url
+        value: https://ppas-backend.onrender.com
 
 databases:
   - name: ppas-db
     databaseName: ppas
-    user: postgres
+    user: ppas_user
     plan: free
