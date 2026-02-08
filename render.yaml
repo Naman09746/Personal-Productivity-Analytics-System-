@@ -24,7 +24,7 @@ services:
     startCommand: "cd frontend && npm run preview -- --host --port $PORT"
     envVars:
       - key: VITE_API_URL
-        value: https://ppas-backend.onrender.com
+        value: https://ppas-backend.onrender.com/api
 
 databases:
   - name: ppas-db
