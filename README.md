@@ -60,6 +60,15 @@ npm run dev
 docker-compose up -d
 ```
 
+### Running Tests
+
+```bash
+cd backend
+createdb ppas_test  # Create test database (PostgreSQL)
+TEST_DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ppas_test pytest
+# If langsmith plugin conflicts: pytest -p no:langsmith
+```
+
 ## 📁 Project Structure
 
 ```

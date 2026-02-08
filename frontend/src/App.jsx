@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { LoginPage, RegisterPage } from './pages/AuthPages';
 import { DashboardPage } from './pages/DashboardPage';
 import { TodayPage } from './pages/TodayPage';
+import { HabitsPage } from './pages/HabitsPage';
 import { WeeklyPage } from './pages/WeeklyPage';
 import { MonthlyPage } from './pages/MonthlyPage';
 import './index.css';
@@ -30,6 +31,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/" element={<PrivateRoute><Layout><DashboardPage /></Layout></PrivateRoute>} />
         <Route path="/today" element={<PrivateRoute><Layout><TodayPage /></Layout></PrivateRoute>} />
+        <Route path="/habits" element={<PrivateRoute><Layout><HabitsPage /></Layout></PrivateRoute>} />
         <Route path="/weekly" element={<PrivateRoute><Layout><WeeklyPage /></Layout></PrivateRoute>} />
         <Route path="/monthly" element={<PrivateRoute><Layout><MonthlyPage /></Layout></PrivateRoute>} />
       </Routes>

@@ -1,5 +1,5 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, CheckSquare, BarChart3, Calendar, LogOut } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, List, BarChart3, Calendar, LogOut } from 'lucide-react';
 import { useAuthStore } from '../stores';
 
 export function Navbar() {
@@ -15,6 +15,7 @@ export function Navbar() {
     const links = [
         { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
         { to: '/today', icon: CheckSquare, label: 'Today' },
+        { to: '/habits', icon: List, label: 'Habits' },
         { to: '/weekly', icon: BarChart3, label: 'Weekly' },
         { to: '/monthly', icon: Calendar, label: 'Monthly' },
     ];

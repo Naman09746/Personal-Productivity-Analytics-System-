@@ -1,12 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Plus } from 'lucide-react';
-import { HabitCheckbox, ProgressRing, LoadingState, EmptyState } from '../components';
+import { ProgressRing, LoadingState, EmptyState, ErrorBanner, HabitRow, Modal, ConfirmDialog } from '../components';
+import { HabitForm } from '../components/HabitForm';
 import { useHabitStore } from '../stores';
 
 export function TodayPage() {
-    const { todayEntries, habits, loading, fetchTodayEntries, fetchHabits, toggleHabit, createHabit } = useHabitStore();
+    const {
+        todayEntries, habits, loading, toggleLoadingIds, error,
+        fetchTodayEntries, fetchHabits, toggleHabit, createHabit, updateHabit, deleteHabit, clearError
+    } = useHabitStore();
     const [showAddModal, setShowAddModal] = useState(false);
-    const [newHabit, setNewHabit] = useState({ name: '', category: 'general', is_physical: false, weight: 5 });
+    const [editHabit, setEditHabit] = useState(null);
+    const [deleteHabitTarget, setDeleteHabitTarget] = useState(null);
+    const [addLoading, setAddLoading] = useState(false);
+    const [editLoading, setEditLoading] = useState(false);
+    const [deleteLoading, setDeleteLoading] = useState(false);
 
     useEffect(() => {
         fetchTodayEntries();
@@ -19,22 +27,64 @@ export function TodayPage() {
         toggleHabit(habitId, today, completed);
     };
 
-    const handleAddHabit = async (e) => {
-        e.preventDefault();
-        const success = await createHabit(newHabit);
+    const isToggleLoading = (habitId) => toggleLoadingIds.includes(habitId);
+
+    const handleAddHabit = async (formData) => {
+        setAddLoading(true);
+        const success = await createHabit(formData);
+        setAddLoading(false);
         if (success) {
             setShowAddModal(false);
-            setNewHabit({ name: '', category: 'general', is_physical: false, weight: 5 });
-            fetchTodayEntries();
         }
+    };
+
+    const handleEditHabit = async (formData) => {
+        if (!editHabit?.habit_id) return;
+        setEditLoading(true);
+        const success = await updateHabit(editHabit.habit_id, formData);
+        setEditLoading(false);
+        if (success) {
+            setEditHabit(null);
+        }
+    };
+
+    const handleDeleteHabit = async () => {
+        if (!deleteHabitTarget?.habit_id) return;
+        setDeleteLoading(true);
+        const success = await deleteHabit(deleteHabitTarget.habit_id);
+        setDeleteLoading(false);
+        if (success) {
+            setDeleteHabitTarget(null);
+        }
+    };
+
+    // Merge habit from todayEntries with full habit from habits list (for edit form)
+    const getHabitForEdit = (h) => {
+        const full = habits.find(x => x.id === h.habit_id);
+        return {
+            habit_id: h.habit_id,
+            habit_name: h.habit_name,
+            name: h.habit_name,
+            category: h.category,
+            is_physical: h.is_physical,
+            weight: full?.weight ?? 5,
+            target_per_week: full?.target_per_week ?? 7,
+            goal_threshold: full?.goal_threshold ?? 80
+        };
     };
 
     if (loading && !todayEntries) return <LoadingState />;
 
     return (
         <div>
+            <ErrorBanner message={error} onDismiss={clearError} />
             <div className="flex-between mb-lg">
-                <h1>Today's Habits</h1>
+                <div>
+                    <h1>Today's Habits</h1>
+                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginTop: 4 }}>
+                        Habits stay until you remove them. Just check off daily.
+                    </p>
+                </div>
                 <button className="btn btn-primary" onClick={() => setShowAddModal(true)}>
                     <Plus size={18} /> Add Habit
                 </button>
@@ -55,12 +105,15 @@ export function TodayPage() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                             {todayEntries.habits.map(habit => (
-                                <HabitCheckbox
+                                <HabitRow
                                     key={habit.habit_id}
                                     habit={habit}
                                     checked={habit.completed}
                                     onToggle={(completed) => handleToggle(habit.habit_id, completed)}
-                                    disabled={habit.is_physical && todayEntries.physical_completed && !habit.completed}
+                                    disabled={(habit.is_physical && todayEntries.physical_completed && !habit.completed) || isToggleLoading(habit.habit_id)}
+                                    isLoading={isToggleLoading(habit.habit_id)}
+                                    onEdit={() => setEditHabit(getHabitForEdit(habit))}
+                                    onDelete={() => setDeleteHabitTarget(habit)}
                                 />
                             ))}
                         </div>
@@ -85,46 +138,42 @@ export function TodayPage() {
             ) : (
                 <EmptyState
                     title="No habits yet"
-                    message="Create your first habit to get started"
+                    message="Add your first habit once and it will appear here every day until you remove it."
                     action={<button className="btn btn-primary mt-md" onClick={() => setShowAddModal(true)}>Add Habit</button>}
                 />
             )}
 
             {showAddModal && (
-                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-                    <div className="card" style={{ width: '100%', maxWidth: '400px' }}>
-                        <h3 className="mb-lg">Add New Habit</h3>
-                        <form onSubmit={handleAddHabit}>
-                            <div className="mb-md">
-                                <input className="input" placeholder="Habit name" value={newHabit.name} onChange={e => setNewHabit({ ...newHabit, name: e.target.value })} required />
-                            </div>
-                            <div className="mb-md">
-                                <select className="input" value={newHabit.category} onChange={e => setNewHabit({ ...newHabit, category: e.target.value })}>
-                                    <option value="general">General</option>
-                                    <option value="health">Health</option>
-                                    <option value="physical">Physical</option>
-                                    <option value="mental">Mental</option>
-                                    <option value="learning">Learning</option>
-                                    <option value="creative">Creative</option>
-                                </select>
-                            </div>
-                            <div className="mb-md">
-                                <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                                    <input type="checkbox" checked={newHabit.is_physical} onChange={e => setNewHabit({ ...newHabit, is_physical: e.target.checked })} />
-                                    Physical activity (max 1/day)
-                                </label>
-                            </div>
-                            <div className="mb-lg">
-                                <label style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Weight (1-10): {newHabit.weight}</label>
-                                <input type="range" min="1" max="10" value={newHabit.weight} onChange={e => setNewHabit({ ...newHabit, weight: parseInt(e.target.value) })} style={{ width: '100%' }} />
-                            </div>
-                            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
-                                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)} style={{ flex: 1 }}>Cancel</button>
-                                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Add</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
+                <Modal title="Add New Habit" onClose={() => !addLoading && setShowAddModal(false)}>
+                    <HabitForm
+                        onSubmit={handleAddHabit}
+                        onCancel={() => setShowAddModal(false)}
+                        loading={addLoading}
+                    />
+                </Modal>
+            )}
+
+            {editHabit && (
+                <Modal title="Edit Habit" onClose={() => !editLoading && setEditHabit(null)}>
+                    <HabitForm
+                        habit={editHabit}
+                        onSubmit={handleEditHabit}
+                        onCancel={() => setEditHabit(null)}
+                        loading={editLoading}
+                    />
+                </Modal>
+            )}
+
+            {deleteHabitTarget && (
+                <Modal onClose={() => !deleteLoading && setDeleteHabitTarget(null)}>
+                    <ConfirmDialog
+                        message={`Remove "${deleteHabitTarget.habit_name}" from your habits? It will disappear from your list.`}
+                        confirmLabel="Remove"
+                        onConfirm={handleDeleteHabit}
+                        onCancel={() => setDeleteHabitTarget(null)}
+                        loading={deleteLoading}
+                    />
+                </Modal>
             )}
         </div>
     );

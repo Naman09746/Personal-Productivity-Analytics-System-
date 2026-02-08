@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { Target, Flame, CheckCircle, TrendingUp } from 'lucide-react';
-import { KPICard, ProgressRing, LoadingState } from '../components';
+import { KPICard, ProgressRing, LoadingState, ErrorBanner } from '../components';
 import { TrendChart } from '../components/Charts';
 import { useAnalyticsStore, useHabitStore } from '../stores';
 
 export function DashboardPage() {
-    const { todayStats, trends, fetchTodayStats, fetchTrends } = useAnalyticsStore();
+    const { todayStats, trends, error, fetchTodayStats, fetchTrends, clearError } = useAnalyticsStore();
     const { todayEntries, fetchTodayEntries } = useHabitStore();
 
     useEffect(() => {
@@ -18,6 +18,7 @@ export function DashboardPage() {
 
     return (
         <div>
+            <ErrorBanner message={error} onDismiss={clearError} />
             <h1 className="mb-lg">Dashboard</h1>
 
             <div className="grid-4 mb-lg">

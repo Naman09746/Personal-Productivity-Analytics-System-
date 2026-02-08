@@ -1,20 +1,21 @@
 import { useEffect } from 'react';
-import { KPICard, LoadingState } from '../components';
+import { KPICard, LoadingState, ErrorBanner } from '../components';
 import { useAnalyticsStore } from '../stores';
 
 export function MonthlyPage() {
-    const { monthlyData, loading, fetchMonthlyAnalytics } = useAnalyticsStore();
+    const { monthlyData, loading, error, fetchMonthlyAnalytics, clearError } = useAnalyticsStore();
 
     useEffect(() => { fetchMonthlyAnalytics(); }, []);
 
     if (loading || !monthlyData) return <LoadingState />;
 
-    const gradeColor = monthlyData.performance_grade.startsWith('A') ? 'var(--success)'
+    const gradeColor = monthlyData.performance_grade?.startsWith('A') ? 'var(--success)'
         : monthlyData.performance_grade.startsWith('B') ? 'var(--accent)'
             : monthlyData.performance_grade.startsWith('C') ? 'var(--warning)' : 'var(--danger)';
 
     return (
         <div>
+            <ErrorBanner message={error} onDismiss={clearError} />
             <h1 className="mb-lg">Monthly Report - {new Date(monthlyData.year, monthlyData.month - 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h1>
 
             <div className="grid-4 mb-lg">

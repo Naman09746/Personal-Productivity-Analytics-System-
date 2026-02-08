@@ -5,9 +5,11 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_db
+from dependencies import get_current_user as require_user
 from schemas.user import UserCreate, UserLogin, UserResponse, TokenResponse, TokenRefresh
 from services.auth_service import AuthService
 from config import settings
+from models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -89,10 +91,6 @@ async def refresh_token(token_data: TokenRefresh, db: AsyncSession = Depends(get
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user(
-    db: AsyncSession = Depends(get_db),
-    current_user = Depends(lambda: None)  # Will be replaced with actual dependency
-):
+async def get_me(current_user: User = Depends(require_user)):
     """Get current user info"""
-    # This will use the get_current_user dependency from dependencies.py
-    pass
+    return current_user

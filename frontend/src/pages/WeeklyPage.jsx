@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { KPICard, LoadingState } from '../components';
+import { KPICard, LoadingState, ErrorBanner } from '../components';
 import { WeeklyChart } from '../components/Charts';
 import { useAnalyticsStore } from '../stores';
 
 export function WeeklyPage() {
-    const { weeklyData, loading, fetchWeeklyAnalytics } = useAnalyticsStore();
+    const { weeklyData, loading, error, fetchWeeklyAnalytics, clearError } = useAnalyticsStore();
 
     useEffect(() => { fetchWeeklyAnalytics(); }, []);
 
@@ -13,6 +13,7 @@ export function WeeklyPage() {
 
     return (
         <div>
+            <ErrorBanner message={error} onDismiss={clearError} />
             <div className="flex-between mb-lg">
                 <h1>Weekly Analytics</h1>
                 <div className="flex gap-sm">

@@ -43,10 +43,11 @@ export const useHabitStore = create((set, get) => ({
     habits: [],
     todayEntries: null,
     loading: false,
+    toggleLoadingIds: [], // habitIds being toggled
     error: null,
 
     fetchHabits: async () => {
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
             const habits = await api.getHabits();
             set({ habits, loading: false });
@@ -56,7 +57,7 @@ export const useHabitStore = create((set, get) => ({
     },
 
     fetchTodayEntries: async () => {
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
             const data = await api.getTodayEntries();
             set({ todayEntries: data, loading: false });
@@ -66,18 +67,53 @@ export const useHabitStore = create((set, get) => ({
     },
 
     toggleHabit: async (habitId, date, completed) => {
+        const { todayEntries } = get();
+        if (!todayEntries) return;
+
+        // Optimistic update
+        const prevEntries = JSON.parse(JSON.stringify(todayEntries));
+        const updatedHabits = todayEntries.habits.map(h =>
+            h.habit_id === habitId ? { ...h, completed } : h
+        );
+        const completionCount = updatedHabits.filter(h => h.completed).length;
+        const total = todayEntries.total_habits || 1;
+        const physicalCompleted = updatedHabits.some(h => h.is_physical && h.completed);
+        set({
+            todayEntries: {
+                ...todayEntries,
+                habits: updatedHabits,
+                completion_count: completionCount,
+                completion_rate: (completionCount / total) * 100,
+                physical_completed: physicalCompleted
+            },
+            toggleLoadingIds: [...get().toggleLoadingIds, habitId]
+        });
+
         try {
             await api.createEntry(habitId, date, completed);
-            await get().fetchTodayEntries();
+            set({ toggleLoadingIds: get().toggleLoadingIds.filter(id => id !== habitId) });
         } catch (e) {
-            set({ error: e.message });
+            set({ todayEntries: prevEntries, error: e.message, toggleLoadingIds: [] });
         }
     },
 
     createHabit: async (habit) => {
+        set({ error: null });
         try {
             await api.createHabit(habit);
-            await get().fetchHabits();
+            await Promise.all([get().fetchHabits(), get().fetchTodayEntries()]);
+            return true;
+        } catch (e) {
+            set({ error: e.message });
+            return false;
+        }
+    },
+
+    updateHabit: async (id, habit) => {
+        set({ error: null });
+        try {
+            await api.updateHabit(id, habit);
+            await Promise.all([get().fetchHabits(), get().fetchTodayEntries()]);
             return true;
         } catch (e) {
             set({ error: e.message });
@@ -86,16 +122,21 @@ export const useHabitStore = create((set, get) => ({
     },
 
     deleteHabit: async (id) => {
+        set({ error: null });
         try {
             await api.deleteHabit(id);
-            await get().fetchHabits();
+            await Promise.all([get().fetchHabits(), get().fetchTodayEntries()]);
+            return true;
         } catch (e) {
             set({ error: e.message });
+            return false;
         }
-    }
+    },
+
+    clearError: () => set({ error: null })
 }));
 
-export const useAnalyticsStore = create((set) => ({
+export const useAnalyticsStore = create((set, get) => ({
     todayStats: null,
     weeklyData: null,
     monthlyData: null,
@@ -139,5 +180,7 @@ export const useAnalyticsStore = create((set) => ({
         } catch (e) {
             set({ error: e.message });
         }
-    }
+    },
+
+    clearError: () => set({ error: null })
 }));
